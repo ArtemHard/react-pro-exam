@@ -1,18 +1,23 @@
 import s from './ProfilePage.module.css';
 import classNames from 'classnames';
+import { useNavigate } from 'react-router-dom';
 import { ButtonBack } from '../../../shared/ui/ButtonBack';
+import { Button } from '../../../shared/ui/Button';
+import { Input } from '../../../shared/ui/Input';
 import { WithProtection } from '../../../shared/store/HOCs/WithProtection';
 
 export const ProfilePage = WithProtection(() => {
+	const navigate = useNavigate();
+
 	return (
 		<>
-			<ButtonBack />
-			<h1 className={s['form__title']}>Мои данные</h1>
+			<ButtonBack onClick={() => navigate(-1)} />
+			<h1 className={s['form__title']}>Мой профиль</h1>
 			<form className={classNames(s['form'], s['form'])}>
 				<div className={s['form__row']}>
 					<label className={s['form__label']} htmlFor='name'>
 						{''}
-						<input
+						<Input
 							className={s['input']}
 							name='name'
 							id='name'
@@ -22,29 +27,29 @@ export const ProfilePage = WithProtection(() => {
 					</label>
 					<label className={s['form__label']}>
 						{''}
-						<input
+						<Input
 							className={s['input']}
 							name='about'
 							id='about'
 							type='text'
-							placeholder='Описание профессии'
+							placeholder='Расскажите о себе'
 						/>
 					</label>
 				</div>
 				<div className={s['form__row']}>
 					<label className={s['form__label']}>
 						{''}
-						<input
+						<Input
 							className={s['input']}
 							name='avatar'
 							id='avatar'
 							type='url'
-							placeholder='Введите ссылку на аватарку'
+							placeholder='Введите ссылку на аватар'
 						/>
 					</label>
 					<label className={s['form__label']}>
 						{''}
-						<input
+						<Input
 							className={s['input']}
 							name='email'
 							id='email'
@@ -54,22 +59,19 @@ export const ProfilePage = WithProtection(() => {
 					</label>
 				</div>
 
-				<button
+				<Button
 					type='submit'
-					className={classNames(
-						s['form__btn'],
-						s['secondary'],
-						s['maxContent']
-					)}>
+					variant='secondary'
+					className={classNames(s['form__btn'], s['maxContent'])}>
 					Сохранить
-				</button>
+				</Button>
 			</form>
 			<h2 className={s['form__title']}>Изменить пароль</h2>
 			<form className={classNames(s['form'], s['form'])}>
 				<div className={classNames(s['form__row'], s['form__row_min'])}>
 					<label className={s['form__label']}>
 						{''}
-						<input
+						<Input
 							className={s['input']}
 							name='password'
 							id='password'
@@ -78,15 +80,12 @@ export const ProfilePage = WithProtection(() => {
 						/>
 					</label>
 				</div>
-				<button
+				<Button
 					type='submit'
-					className={classNames(
-						s['form__btn'],
-						s['secondary'],
-						s['maxContent']
-					)}>
+					variant='secondary'
+					className={classNames(s['form__btn'], s['maxContent'])}>
 					Сохранить
-				</button>
+				</Button>
 			</form>
 		</>
 	);

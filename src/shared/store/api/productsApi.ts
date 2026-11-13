@@ -1,5 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { customBaseQuery } from './config';
+import { AppDispatch, RootState } from '../types';
 
 export interface IErrorResponse {
 	data: { statusCode: number; message: string; error: string };
@@ -33,6 +34,77 @@ interface ProductRequest {
 	sort: Sort;
 	searchText: string;
 }
+
+type LikeAction = 'add' | 'remove';
+
+const changeProductLike = (
+	product: Product,
+	productId: string,
+	userId: string,
+	action: LikeAction
+) => {
+	if (product.id !== productId) {
+		return;
+	}
+
+	if (action === 'add') {
+		if (!product.likes.some((like) => like.userId === userId)) {
+			product.likes.push({
+				id: `optimistic-${productId}-${userId}`,
+				userId,
+				productId,
+			} as Like);
+		}
+		return;
+	}
+
+	product.likes = product.likes.filter((like) => like.userId !== userId);
+};
+
+const patchLikeInCache = (
+	productId: string,
+	userId: string,
+	action: LikeAction,
+	dispatch: AppDispatch,
+	getState: () => unknown
+) => {
+	const state = getState() as RootState;
+	const patches: { undo: () => void }[] = [];
+
+	Object.values(state.productsApi.queries).forEach((query) => {
+		if (query?.endpointName === 'getProducts' && query.originalArgs) {
+			patches.push(
+				dispatch(
+					productsApi.util.updateQueryData(
+						'getProducts',
+						query.originalArgs as ProductRequest,
+						(draft) => {
+							draft.products.forEach((product) =>
+								changeProductLike(product, productId, userId, action)
+							);
+						}
+					)
+				)
+			);
+		}
+
+		if (query?.endpointName === 'getProduct' && query.originalArgs) {
+			patches.push(
+				dispatch(
+					productsApi.util.updateQueryData(
+						'getProduct',
+						query.originalArgs as Pick<Product, 'id'>,
+						(draft) => {
+							changeProductLike(draft, productId, userId, action);
+						}
+					)
+				)
+			);
+		}
+	});
+
+	return patches;
+};
 
 export const productsApi = createApi({
 	reducerPath: 'productsApi',
@@ -83,10 +155,27 @@ export const productsApi = createApi({
 				url: `/products/${id}/likes`,
 				method: 'PUT',
 			}),
-			invalidatesTags: (productFromBE) => [
-				{ type: 'Products', id: 'list' },
-				{ type: 'Products', id: productFromBE?.like.productId },
-			],
+			async onQueryStarted({ id }, { dispatch, getState, queryFulfilled }) {
+				const userId = (getState() as RootState).user.user?.id;
+
+				if (!userId) {
+					return;
+				}
+
+				const patches = patchLikeInCache(
+					id,
+					userId,
+					'add',
+					dispatch as AppDispatch,
+					getState
+				);
+
+				try {
+					await queryFulfilled;
+				} catch {
+					patches.forEach((patch) => patch.undo());
+				}
+			},
 		}),
 		deleteLikeProduct: builder.mutation<
 			DeleteLikeResponse,
@@ -96,10 +185,27 @@ export const productsApi = createApi({
 				url: `/products/${id}/likes`,
 				method: 'DELETE',
 			}),
-			invalidatesTags: (productFromBE) => [
-				{ type: 'Products', id: 'list' },
-				{ type: 'Products', id: productFromBE?.product.productId },
-			],
+			async onQueryStarted({ id }, { dispatch, getState, queryFulfilled }) {
+				const userId = (getState() as RootState).user.user?.id;
+
+				if (!userId) {
+					return;
+				}
+
+				const patches = patchLikeInCache(
+					id,
+					userId,
+					'remove',
+					dispatch as AppDispatch,
+					getState
+				);
+
+				try {
+					await queryFulfilled;
+				} catch {
+					patches.forEach((patch) => patch.undo());
+				}
+			},
 		}),
 	}),
 });

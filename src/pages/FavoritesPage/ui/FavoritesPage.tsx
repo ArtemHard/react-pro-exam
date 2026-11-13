@@ -1,25 +1,16 @@
+import { useNavigate } from 'react-router-dom';
 import { WithProtection } from '../../../shared/store/HOCs/WithProtection';
-import { WithQuery } from '../../../shared/store/HOCs/WithQuery';
-import { useProducts } from '../../../shared/store/hooks/useProducts';
 import { ButtonBack } from '../../../shared/ui/ButtonBack';
-import { CardList } from '../../../widgets/CardList';
-
-const CardListWithQuery = WithQuery(CardList);
+import { ProductList } from '../../../features/products';
 
 export const FavoritesPage = WithProtection(() => {
-	const { isLoading, isError, products, error } = useProducts();
+	const navigate = useNavigate();
 
 	return (
 		<>
 			<br />
-			<ButtonBack />
-			<CardListWithQuery
-				title='Избранные'
-				isLoading={isLoading}
-				isError={isError}
-				products={products}
-				error={error}
-			/>
+			<ButtonBack onClick={() => navigate(-1)} />
+			<ProductList title='Избранные товары' />
 		</>
 	);
 });

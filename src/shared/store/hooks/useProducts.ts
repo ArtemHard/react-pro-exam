@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { userSelectors } from '../slices/user';
 import { useAppSelector } from '../utils';
@@ -20,13 +21,19 @@ export const useProducts = () => {
 		perPage: isFavoritesPage ? undefined : perPage,
 	});
 
-	let products = data?.products || [];
-
+	const rawProducts = data?.products;
 	const user = useAppSelector(userSelectors.getUser);
+	const userId = user?.id;
 
-	if (isFavoritesPage) {
-		products = products.filter((product) => isLiked(product.likes, user?.id));
-	}
+	const products = useMemo(() => {
+		const list = rawProducts ?? [];
+
+		if (!isFavoritesPage) {
+			return list;
+		}
+
+		return list.filter((product) => isLiked(product.likes, userId));
+	}, [rawProducts, isFavoritesPage, userId]);
 
 	const productsCount = data?.length || 0;
 
